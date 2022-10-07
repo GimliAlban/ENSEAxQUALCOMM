@@ -4,16 +4,14 @@ Lef Parser class.
 import re
 from typing import Iterable, Tuple
 
-fileName = input("Quel est le fichier que vous voulez analyser ? ") + ".lef"
-f = open(fileName, "r").read()
-
 class LefPort:
     """
     Class to describe a lef port.
     """
 
-    def __init__(self, port_name: str) -> None:
+    def __init__(self, port_name: str, lef_file: str) -> None:
         self.port_name = port_name
+        self.lef_file = lef_file
 
     def get_name(self) -> str:
         """Get the name of the port.
@@ -29,8 +27,8 @@ class LefPort:
         Returns:
             str: Direction of the pin, can be INPUT, OUTPUT or INOUT.
         """
-        regex = self.name + '\n\s\sDIRECTION\s(.+)\s;'
-        return re.findall(regex, f)
+        regex = self.port_name + '\n\s\sDIRECTION\s(.+)\s;'
+        return re.findall(regex, self.lef_file)[0]
 
     def get_use(self) -> str:
         """Get the use of the pin.
@@ -38,8 +36,8 @@ class LefPort:
         Returns:
             str: Use of the pin, can be SIGNAL, GROUND or POWER.
         """
-        regex = self.name + '\n\s\sDIRECTION\s' + self.get_direction() + '\s;\n\s\sUSE(.+)\s;'
-        return re.findall(regex, f)
+        regex = 'USE\s(.+)\s;'
+        return re.findall(regex, self.lef_file)[0]
 
     def get_layer(self) -> str:
         """Get the layer associated with the pin.
@@ -47,8 +45,8 @@ class LefPort:
         Returns:
             str: Layer name.
         """
-        regex = self.name + '\n\s\sDIRECTION\s(.+)\s' + self.get_direction() + '\n\s\sUSE(.+)\s' + self.get_use() + '\s;\n\s\sPORT\n\s\s\sLAYER\s(.+)\s;'
-        return re.findall(regex, f)
+        regex = 'LAYER\s(.+)\s;'
+        return re.findall(regex, self.lef_file)[0]
 
     def get_polygon(self) -> Tuple[Tuple]:
         """Get the polygon of the port.
@@ -56,9 +54,9 @@ class LefPort:
         Returns:
             Tuple[Tuple]: Tuple of points.
         """
-        regex = 'RECT\s(.+)\s;\n\s\sEND\sPORT\n\sEND\s' + self.name
-        tab = re.findall(regex, f).split(" ")
-        return Tuple(tab[0], tab[1], tab[2], tab[3])
+        regex = 'RECT\s(.+)\s;'
+        tab = re.findall(regex, self.lef_file)[0].split(' ')
+        return (tab[0], tab[1], tab[2], tab[3])
 
 
 class LefCell:
@@ -66,8 +64,9 @@ class LefCell:
     Class to describe a lef cell.
     """
 
-    def __init__(self, cell_name: str) -> None:
+    def __init__(self, cell_name: str, lef_file: str) -> None:
         self.cell_name = cell_name
+        self.lef_file = lef_file
 
     def get_name(self) -> str:
         """Get the name of the cell.
@@ -83,9 +82,9 @@ class LefCell:
         Returns:
             Tuple[Tuple]: Tuple of points representing the bounding box.
         """
-        regex = self.name + '\n\sSIZE\s(.+)\s;'
-        tab = re.findall(regex, f).split(" BY ")
-        return Tuple(tab[0], tab[1])
+        regex = 'SIZE\s(.+)\s;'
+        tab = re.findall(regex, self.lef_file)[0].split(" BY ")
+        return (tab[0], tab[1])
 
     def get_ports(self) -> Iterable[LefPort]:
         """Get the ports in the cell.
@@ -93,10 +92,11 @@ class LefCell:
         Returns:
             Iterable[LefPort]: Iterable of LefPort in the cell.
         """
-        tab = f.split("END MACRO")
+        tab = self.lef_file.split("PIN")
+        tab = tab[1:]
         for i in range(len(tab)):
-            if re.findall('MACRO\s(.+)', tab[i]) == self.name:
-                return Iterable(re.findall('PIN\s(.+)', tab[i]))
+            tab[i] = "\n\nPIN" + tab[i]
+        return [LefPort(re.findall('PIN\s(.+)', x)[0], x + "") for x in tab]
 
 
 
@@ -115,3 +115,26 @@ class LefParser:
         Returns:
             Iterable[LefCell]: Iterable of LefCell in the lef file.
         """
+        tab = self.lef_file.split("END MACRO")
+        return [LefCell(re.findall('MACRO\s(.+)\n', x), x + "") for x in tab]
+         
+f = open("./lef_files/3_cells_1000_pins.lef", 'r').read()
+
+file = LefParser(f)
+
+print(file)
+
+cells = file.get_cells()
+print(cells[1:10])
+
+print(cells[0].get_name())
+print(cells[0].get_size())
+
+port=cells[0].get_ports()
+print(port[1:10])
+
+print(port[0].get_name())
+print(port[0].get_direction())
+print(port[0].get_use())
+print(port[0].get_layer())
+print(port[0].get_polygon())
