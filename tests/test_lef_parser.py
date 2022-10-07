@@ -5,8 +5,9 @@ import pytest
 import os
 import re
 from src.lef_parser import LefParser
+from definition import ROOT_DIR
 
-LEF_FILES = os.listdir("./lef_files")
+LEF_FILES = list(map(lambda file: f"{ROOT_DIR}/lef_files/{file}", os.listdir("./lef_files")))
 
 
 @pytest.mark.parametrize("lef_file", LEF_FILES)

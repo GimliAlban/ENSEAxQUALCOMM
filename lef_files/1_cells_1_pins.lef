@@ -1,0 +1,11 @@
+MACRO cell_0
+	SIZE 100 BY 100 ;
+	PIN pin_0
+		DIRECTION INPUT ;
+		USE POWER ;
+		PORT
+			LAYER M1 ;
+			RECT 0 49.5 1 50.5 ;
+		END PORT
+	END pin_0
+END MACRO
