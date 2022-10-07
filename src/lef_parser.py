@@ -3,8 +3,6 @@ Lef Parser class.
 """
 
 
-from ast import And
-from ctypes import sizeof
 from typing import Iterable, Tuple
 import re
 
@@ -133,6 +131,7 @@ class LefParser:
         cellPorts = []
         ports = []
 
+        # Create list of ports for each cell
         for i, pin in enumerate(pins):
             polygon = tuple([float(y) for y in polygons[i].split(" ")])
             ports.append(LefPort(pin, directions[i], uses[i], layers[i], polygon))
@@ -145,6 +144,7 @@ class LefParser:
 
         ret = []
 
+        # Instantiate each cell
         for i, cellName in enumerate(cells):
             ret.append(LefCell(cellName.strip(), sizes[i], cellPorts[i]))
 
