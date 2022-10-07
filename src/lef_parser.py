@@ -4,6 +4,8 @@ Lef Parser class.
 
 
 from typing import Iterable, Tuple
+from winreg import DisableReflectionKey
+import re
 
 
 class LefPort:
@@ -11,8 +13,9 @@ class LefPort:
     Class to describe a lef port.
     """
 
-    def __init__(self, port_name: str) -> None:
+    def __init__(self, port_name: str, port_file: str) -> None:
         self.port_name = port_name
+        self.port_file = port_file
 
     def get_name(self) -> str:
         """Get the name of the port.
@@ -28,6 +31,11 @@ class LefPort:
         Returns:
             str: Direction of the pin, can be INPUT, OUTPUT or INOUT.
         """
+        
+        # Finds all the words that is preceded by "DIRECTION "
+        direction = re.search('(?<=DIRECTION )\w+', self.port_file).group()
+        
+        return direction
 
     def get_use(self) -> str:
         """Get the use of the pin.
@@ -35,6 +43,10 @@ class LefPort:
         Returns:
             str: Use of the pin, can be SIGNAL, GROUND or POWER.
         """
+        
+        use = re.search('(?<=USE )\w+', self.port_file).group()
+        
+        return use
 
     def get_layer(self) -> str:
         """Get the layer associated with the pin.
@@ -42,6 +54,10 @@ class LefPort:
         Returns:
             str: Layer name.
         """
+        
+        layer = re.search('(?<=LAYER )\w+', self.port_file).group()
+        
+        return layer
 
     def get_polygon(self) -> Tuple[Tuple]:
         """Get the polygon of the port.
@@ -50,14 +66,27 @@ class LefPort:
             Tuple[Tuple]: Tuple of points.
         """
 
+        polygon = re.search('(?<=RECT )(\d+|\s|\.)*', self.port_file).group()
+        polygons = polygon.split(" ")
+        polygons.pop()
+        
+        # Tuple with only the 1st and 3rd coordinates
+        x_coords = (polygons[0], polygons[2])
+        y_coords = (polygons[1], polygons[3])
+        
+        # Nested for loop to parse all the coordinates
+        polygon = tuple([(float(x), float(y)) for x in x_coords for y in y_coords])
+        
+        return polygon
 
 class LefCell:
     """
     Class to describe a lef cell.
     """
 
-    def __init__(self, cell_name: str) -> None:
+    def __init__(self, cell_name: str, cell_file: str) -> None:
         self.cell_name = cell_name
+        self.cell_file = cell_file
 
     def get_name(self) -> str:
         """Get the name of the cell.
