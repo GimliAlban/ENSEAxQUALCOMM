@@ -23,15 +23,23 @@ class LefPort:
         """
         return self.port_name
 
+    def get_lef_file(self) -> str:
+        """Get the lef file of the port.
+
+        Returns:
+            str: Lef file of the port.
+        """
+        return self.lef_file
+
     def get_direction(self) -> str:
         """Get the direction of the pin.
 
         Returns:
             str: Direction of the pin, can be INPUT, OUTPUT or INOUT.
         """
-        direction = re.findall("(?<=DIRECTION\s)\w+", self.lef_file)
+        direction = re.search("(?<=DIRECTION\s)\w+", self.lef_file).group()
 
-        return direction[0]
+        return direction
 
     def get_use(self) -> str:
         """Get the use of the pin.
@@ -39,9 +47,9 @@ class LefPort:
         Returns:
             str: Use of the pin, can be SIGNAL, GROUND or POWER.
         """
-        direction = re.findall("(?<=USE\s)\w+", self.lef_file)
+        use = re.search("(?<=USE\s)\w+", self.lef_file).group()
 
-        return direction[0]
+        return use
 
 
     def get_layer(self) -> str:
@@ -51,7 +59,7 @@ class LefPort:
             str: Layer name.
         """
         
-        layer = re.findall("(?<=LAYER\s)\w+", self.lef_file)
+        layer = re.search("(?<=LAYER\s)\w+", self.lef_file).group()
 
         return layer[0]
 
@@ -61,6 +69,7 @@ class LefPort:
         Returns:
             Tuple[Tuple]: Tuple of points.
         """
+
         points = re.findall("(?<=RECT\s).+", self.lef_file)[0].split(" ")
         point1 = (float(points[0]), float(points[1]))
         point2 = (float(points[2]), float(points[3]))
@@ -85,6 +94,15 @@ class LefCell:
         """
         return self.cell_name
 
+    def get_lef_file(self) -> str:
+        """Get the lef file of the port.
+
+        Returns:
+            str: Lef file of the port.
+        """
+        return self.lef_file
+
+
     def get_size(self) -> Tuple[Tuple]:
         """Get the bounding box of the cell.
         
@@ -105,7 +123,7 @@ class LefCell:
         ports_name = re.findall("PIN\s(.*)\n", self.lef_file)
         for name in ports_name:
             file = re.search("(?<="+name+"\n)(.|\n)*(?="+name+")", self.lef_file).group()
-            ports.append(LefPort(name,file[0]))
+            ports.append(LefPort(name,file))
         
         return ports
 
@@ -125,5 +143,15 @@ class LefParser:
         Returns:
             Iterable[LefCell]: Iterable of LefCell in the lef file.
         """
+        cells = []
+        cell_name = re.findall("MACRO\s(.*)\n", self.lef_file)
+        for name in cell_name:
+            if (name == cell_name[-1]):
+                file = re.search("(?<="+name+"\n)(.|\n)*(?=END\sMACRO)", self.lef_file).group()
+            else:
+                file = re.search("(?<="+name+"\n)(.|\n)*(?=END\sMACRO\n)", self.lef_file).group()
+            cells.append(LefCell(name,file))
+        
+        return cells
 
 
