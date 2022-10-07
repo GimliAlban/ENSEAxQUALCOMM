@@ -24,7 +24,7 @@ class LefPort:
             self.direction = match.group(1)
             self.use = match.group(2)
             self.layer = match.group(3)
-            self.rect = ((match.group(4),match.group(5))(match.group(6),match.group(5))(match.group(6),match.group(7))(match.group(4),match.group(7)))
+            self.rect = ((match.group(4),match.group(5)),(match.group(6),match.group(5)),(match.group(6),match.group(7)),(match.group(4),match.group(7)))
 
     def get_name(self) -> str:
         """Get the name of the port.
