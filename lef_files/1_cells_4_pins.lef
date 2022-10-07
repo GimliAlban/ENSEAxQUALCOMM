@@ -2,7 +2,7 @@ MACRO cell_0
 	SIZE 100 BY 100 ;
 	PIN pin_0
 		DIRECTION OUTPUT ;
-		USE SIGNAL ;
+		USE POWER ;
 		PORT
 			LAYER M1 ;
 			RECT 0 49.5 1 50.5 ;
@@ -10,7 +10,7 @@ MACRO cell_0
 	END pin_0
 	PIN pin_1
 		DIRECTION OUTPUT ;
-		USE SIGNAL ;
+		USE POWER ;
 		PORT
 			LAYER M1 ;
 			RECT 99 49.5 100 50.5 ;
@@ -26,7 +26,7 @@ MACRO cell_0
 	END pin_2
 	PIN pin_3
 		DIRECTION INPUT ;
-		USE POWER ;
+		USE SIGNAL ;
 		PORT
 			LAYER M1 ;
 			RECT 49.5 0 50.5 1 ;

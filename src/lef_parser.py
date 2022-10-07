@@ -6,6 +6,7 @@ Lef Parser class.
 from typing import Iterable, Tuple
 from winreg import DisableReflectionKey
 import re
+from xmlrpc.server import list_public_methods
 
 
 class LefPort:
@@ -70,7 +71,7 @@ class LefPort:
         polygons = polygon.split(" ")
         polygons.pop()
         
-        # Tuple with only the 1st and 3rd coordinates
+        # Respective coordinates along each axis
         x_coords = (polygons[0], polygons[2])
         y_coords = (polygons[1], polygons[3])
         
@@ -102,6 +103,16 @@ class LefCell:
         Returns:
             Tuple[Tuple]: Tuple of points representing the bounding box.
         """
+        
+        size = re.findall('(?<=BY )\d+|\d+(?= BY)', self.cell_file)
+        
+        # Respective coordinates along each axis
+        x_coords = 0, size[1]
+        y_coords = 0, size[0]
+        
+        bounding_box = tuple([(float(x), float(y)) for x in x_coords for y in y_coords])
+        
+        return bounding_box
 
     def get_ports(self) -> Iterable[LefPort]:
         """Get the ports in the cell.
@@ -109,6 +120,15 @@ class LefCell:
         Returns:
             Iterable[LefPort]: Iterable of LefPort in the cell.
         """
+        
+        ports_name = re.findall('(?<=PIN )\w+', self.cell_file)
+        list_ports = []
+        
+        for port_name in ports_name:
+            lef_port_code = re.search('(PIN ' + port_name + ')(.|\n)*(END ' + port_name + ')', self.cell_file).group()
+            list_ports.append(LefPort(port_name, lef_port_code))
+        
+        return list_ports
 
 
 class LefParser:
@@ -125,3 +145,10 @@ class LefParser:
         Returns:
             Iterable[LefCell]: Iterable of LefCell in the lef file.
         """
+        
+        cells_name = re.findall('(?<=MACRO )\w+', self.lef_file)
+        list_cells = []
+
+        for cell_name in cells_name:
+            lef_cell_code = re.search('(MACRO ' + cell_name + ')(.|\n)*(END MACRO)', self.cell_file).group()
+            list_cells.append(LefPort(cell_name, lef_cell_code))
