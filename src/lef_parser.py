@@ -56,7 +56,7 @@ class LefCell:
     Class to describe a lef cell.
     """
 
-    def __init__(self, cell_name: str) -> None:
+    def __init__(self, cell_name: str, cell_content: str) -> None:
         self.cell_name = cell_name
 
     def get_name(self) -> str:
@@ -89,7 +89,12 @@ class LefParser:
 
     def __init__(self, lef_file: str) -> None:
         self.lef_file = open(lef_file)
-        self._regex = re.compile(r"MACRO (\w*)\n([\w\s;.]*)END MACRO")
+        regex = re.compile(r"MACRO (\w*)\n([\w\s;.]*)END MACRO")
+        self.cells = []
+        for match in re.finditer(regex, self.lef_file.read()):
+            self.cells.append(LefCell(match.group(1)))
+            print(match.group(1))
+            print(match.group(2))
 
     def get_cells(self) -> Iterable[LefCell]:
         """Get cells in the lef.
@@ -97,11 +102,6 @@ class LefParser:
         Returns:
             Iterable[LefCell]: Iterable of LefCell in the lef file.
         """
-        cells = []
-        for match in re.finditer(self._regex, self.lef_file.read()):
-            cells.append(LefCell(match.group(1)))
-            print(match.group(1))
-            print(match.group(2))
+        return self.cells
 
 parser = LefParser("lef_files\\1_cell_1_port.lef")
-parser.get_cells()
