@@ -16,10 +16,9 @@ class LefPort:
     
     def __init__(self, port_name: str, lefs: str) -> None:
         self.port_name = port_name
-        self.lefs = lefs
         
         regex = r"DIRECTION (\w*).*\s*\w* (\w*).*\s*.*\s*\w* (\S*).*\s*\w* (\S*) (\S*) (\S*) (\S*)"
-        matches = re.finditer(regex)
+        matches = re.finditer(regex, lefs)
         for match in matches:
             self.direction = match.group(1)
             self.use = match.group(2)
@@ -80,7 +79,7 @@ class LefCell:
         self.ports = []
         regex = re.compile(r"PIN (\w*)\n([\w\s;.]*)END \1")
         for match in re.finditer(regex, cell_content):
-            self.ports.append(LefCell(match.group(1), match.group(2)))
+            self.ports.append(LefPort(match.group(1), match.group(2)))
 
     def get_name(self) -> str:
         """Get the name of the cell.
@@ -126,3 +125,4 @@ class LefParser:
             Iterable[LefCell]: Iterable of LefCell in the lef file.
         """
         return self.cells
+        
