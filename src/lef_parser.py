@@ -1,7 +1,7 @@
 """
 Lef Parser class.
 """
-
+import re
 
 from hashlib import new
 from typing import Iterable, Tuple
@@ -13,7 +13,7 @@ class LefPort:
     """
     Class to describe a lef port.
     """
-
+    
     def __init__(self, port_name: str, lefs: str) -> None:
         self.port_name = port_name
         self.lefs = lefs
@@ -72,8 +72,15 @@ class LefCell:
     Class to describe a lef cell.
     """
 
-    def __init__(self, cell_name: str) -> None:
+    def __init__(self, cell_name: str, cell_content: str) -> None:
         self.cell_name = cell_name
+        regex = re.compile(r"SIZE (\d*) BY (\d*)")
+        for match in re.finditer(regex, cell_content):
+            self.size = (match.group(1), match.group(2))
+        self.ports = []
+        regex = re.compile(r"PIN (\w*)\n([\w\s;.]*)END \1")
+        for match in re.finditer(regex, cell_content):
+            self.ports.append(LefCell(match.group(1), match.group(2)))
 
     def get_name(self) -> str:
         """Get the name of the cell.
@@ -89,6 +96,7 @@ class LefCell:
         Returns:
             Tuple[Tuple]: Tuple of points representing the bounding box.
         """
+        return self.size
 
     def get_ports(self) -> Iterable[LefPort]:
         """Get the ports in the cell.
@@ -96,6 +104,7 @@ class LefCell:
         Returns:
             Iterable[LefPort]: Iterable of LefPort in the cell.
         """
+        return self.ports
 
 
 class LefParser:
@@ -104,11 +113,16 @@ class LefParser:
     """
 
     def __init__(self, lef_file: str) -> None:
-        self.lef_file = lef_file
-     
+        lef_file = open(lef_file)
+        regex = re.compile(r"MACRO (\w*)\n([\w\s;.]*)END MACRO")
+        self.cells = []
+        for match in re.finditer(regex, lef_file.read()):
+            self.cells.append(LefCell(match.group(1), match.group(2)))
+
     def get_cells(self) -> Iterable[LefCell]:
         """Get cells in the lef.
 
         Returns:
             Iterable[LefCell]: Iterable of LefCell in the lef file.
-        """     
+        """
+        return self.cells
