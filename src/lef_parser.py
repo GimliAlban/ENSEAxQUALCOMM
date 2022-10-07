@@ -1,10 +1,11 @@
 """
 Lef Parser class.
 """
-
-
+import re
 from typing import Iterable, Tuple
 
+fileName = input("Quel est le fichier que vous voulez analyser ? ") + ".lef"
+f = open(fileName, "r").read()
 
 class LefPort:
     """
@@ -28,6 +29,8 @@ class LefPort:
         Returns:
             str: Direction of the pin, can be INPUT, OUTPUT or INOUT.
         """
+        regex = self.name + '\n\s\sDIRECTION\s(.+)\s;'
+        return re.findall(regex, f)
 
     def get_use(self) -> str:
         """Get the use of the pin.
@@ -35,6 +38,8 @@ class LefPort:
         Returns:
             str: Use of the pin, can be SIGNAL, GROUND or POWER.
         """
+        regex = self.name + '\n\s\sDIRECTION\s' + self.get_direction() + '\s;\n\s\sUSE(.+)\s;'
+        return re.findall(regex, f)
 
     def get_layer(self) -> str:
         """Get the layer associated with the pin.
@@ -42,6 +47,8 @@ class LefPort:
         Returns:
             str: Layer name.
         """
+        regex = self.name + '\n\s\sDIRECTION\s(.+)\s' + self.get_direction() + '\n\s\sUSE(.+)\s' + self.get_use() + '\s;\n\s\sPORT\n\s\s\sLAYER\s(.+)\s;'
+        return re.findall(regex, f)
 
     def get_polygon(self) -> Tuple[Tuple]:
         """Get the polygon of the port.
@@ -49,6 +56,9 @@ class LefPort:
         Returns:
             Tuple[Tuple]: Tuple of points.
         """
+        regex = 'RECT\s(.+)\s;\n\s\sEND\sPORT\n\sEND\s' + self.name
+        tab = re.findall(regex, f).split(" ")
+        return Tuple(tab[0], tab[1], tab[2], tab[3])
 
 
 class LefCell:
@@ -73,6 +83,9 @@ class LefCell:
         Returns:
             Tuple[Tuple]: Tuple of points representing the bounding box.
         """
+        regex = self.name + '\n\sSIZE\s(.+)\s;'
+        tab = re.findall(regex, f).split(" BY ")
+        return Tuple(tab[0], tab[1])
 
     def get_ports(self) -> Iterable[LefPort]:
         """Get the ports in the cell.
@@ -80,6 +93,12 @@ class LefCell:
         Returns:
             Iterable[LefPort]: Iterable of LefPort in the cell.
         """
+        tab = f.split("END MACRO")
+        for i in range(len(tab)):
+            if re.findall('MACRO\s(.+)', tab[i]) == self.name:
+                return Iterable(re.findall('PIN\s(.+)', tab[i]))
+
+
 
 
 class LefParser:
