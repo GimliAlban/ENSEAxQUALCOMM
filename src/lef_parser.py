@@ -74,7 +74,7 @@ class LefCell:
         Returns:
             str: Name of the cell.
         """
-        return self.cell_name
+        return self.cell_name[0]
 
     def get_size(self) -> Tuple[Tuple]:
         """Get the bounding box of the cell.
@@ -84,7 +84,7 @@ class LefCell:
         """
         regex = 'SIZE\s(.+)\s;'
         tab = re.findall(regex, self.lef_file)[0].split(" BY ")
-        return (tab[0], tab[1])
+        return (int(tab[0]), int(tab[1]))
 
     def get_ports(self) -> Iterable[LefPort]:
         """Get the ports in the cell.
@@ -107,7 +107,8 @@ class LefParser:
     """
 
     def __init__(self, lef_file: str) -> None:
-        self.lef_file = lef_file
+        with open("lef_files/" + lef_file, 'r') as f:
+            self.lef_file = f.read()
 
     def get_cells(self) -> Iterable[LefCell]:
         """Get cells in the lef.
@@ -116,18 +117,16 @@ class LefParser:
             Iterable[LefCell]: Iterable of LefCell in the lef file.
         """
         tab = self.lef_file.split("END MACRO")
-        return [LefCell(re.findall('MACRO\s(.+)\n', x), x + "") for x in tab]
+        return [LefCell(re.findall('MACRO\s(.+)\n', x), x + "") for x in tab[:-1]]
          
-f = open("./lef_files/3_cells_1000_pins.lef", 'r').read()
-
-file = LefParser(f)
+file = LefParser("1_cells_8_pins.lef")
 
 print(file)
 
 cells = file.get_cells()
-print(cells[1:10])
+print(cells[0:10])
 
-print(cells[0].get_name())
+[print(x.get_name()) for x in cells]
 print(cells[0].get_size())
 
 port=cells[0].get_ports()
