@@ -32,7 +32,7 @@ def test_lef_get_cells(lef_file: str) -> None:
     """
     re_nb_of_cells = re.compile(r"(?P<nb_cells>\d+)_cell(s)*")
     match = re_nb_of_cells.search(lef_file)
-    nb_of_cells = match.group("nb_cells") if match else 0
+    nb_of_cells = int(match.group("nb_cells")) if match else 0
     lef_parser = LefParser(lef_file)
     lef_cells = lef_parser.get_cells()  # this is flag as an error because get_cells is not implemented
     assert len(lef_cells) == nb_of_cells
@@ -52,7 +52,7 @@ def test_lef_get_ports(lef_file: str) -> None:
     """
     re_nb_of_pins = re.compile(r"(?P<nb_pins>\d+)_(port|pin)(s)*")
     match = re_nb_of_pins.search(lef_file)
-    nb_of_ports = match.group("nb_pins") if match else 0
+    nb_of_ports = int(match.group("nb_pins")) if match else 0
     lef_parser = LefParser(lef_file)
     lef_cells = lef_parser.get_cells() or []
     assert len(lef_cells) > 0

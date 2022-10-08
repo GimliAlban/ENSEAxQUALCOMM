@@ -66,9 +66,10 @@ class LefCell:
     Class to describe a lef cell.
     """
 
-    def __init__(self, cell_name: str, ports: Iterable[LefPort]) -> None:
+    def __init__(self, cell_name: str, size: Tuple[Tuple], ports: Iterable[LefPort]) -> None:
         self.cell_name = cell_name
         self.ports = ports
+        self.size = size
 
     def get_name(self) -> str:
         """Get the name of the cell.
@@ -84,6 +85,7 @@ class LefCell:
         Returns:
             Tuple[Tuple]: Tuple of points representing the bounding box.
         """
+        return self.size
 
     def get_ports(self) -> Iterable[LefPort]:
         """Get the ports in the cell.
@@ -107,34 +109,35 @@ class LefParser:
         Returns:
             Iterable[LefCell]: Iterable of LefCell in the lef file.
         """
-        with open(self.lef_file) as lef_file:
+        with open('lef_files/' + self.lef_file) as lef_file:
             lef_data = lef_file.read()
 
         lefcells = []
-        lefports = []
         end = 0
-
-#search = re.search(r'PIN\s(?P<name>(\w|\_)+)\n\s+DIRECTION\s(?P<direction>\w+)\s;\n\s+USE\s(?P<use>\w+)\s;\n\s+PORT\n\s+LAYER\s(?P<layer>\w+)\s;\n\s+RECT\s(?P<rect>[0-9\.\s]+);', lef_data[end:])
         
         while(1):
+            lefports = []
+
             search = re.search(r'MACRO\s(?P<name>(\w|\_)+)', lef_data[end:])
+
             if (search == None):
                 break
+
             cellname = search.group('name')
-            end = search.end()
+            end += search.end()
 
-            endmacro = re.search(r'END MACRO', lef_data[end:]).start() + end
+            search = re.search(r'SIZE\s(?P<s1>\d+)\sBY\s(?P<s2>\d+)\s;', lef_data[end:])
+            end += search.end()
+            cellsize = ((0, 0), (0, int(search.group('s2'))), (int(search.group('s1')), int(search.group('s2'))), (int(search.group('s1')), 0))
 
-            print(endmacro)
-  
-            i = 0
+            #endmacro = re.search(r'END MACRO', lef_data[end:]).start() + end
 
             while(1):
-                
-                search = re.search(r'PIN\s(?P<g>(\w|\_)+)', lef_data[end:])
+                search = re.search(r'PIN\s(?P<g>(\w|\_)+)|END\s(?P<endmacro>\w+)', lef_data[end:])
                 name = search.group('g')
                 end += search.end()
-
+                if (search.group('endmacro') == 'MACRO'):
+                    break
 
                 search = re.search(r'DIRECTION\s(?P<g>(\w|\_)+)', lef_data[end:])
                 direction = search.group('g')
@@ -151,9 +154,9 @@ class LefParser:
                 end += search.end()
 
                 
-                search = re.search(r'RECT\s(?P<g>[0-9\.\s]+)', lef_data[end:])
-                tmp_polygon = search.group('g').split(' ')
-                polygon = ((tmp_polygon[0], tmp_polygon[1]),(tmp_polygon[2], tmp_polygon[3]))
+                search = re.search(r'RECT\s(?P<g>[0-9\.\s]+)\s', lef_data[end:])
+                tmp_polygon = list(map(float, search.group('g').split(' ')))
+                polygon = ((tmp_polygon[0], tmp_polygon[1]),(tmp_polygon[0], tmp_polygon[3]), (tmp_polygon[2], tmp_polygon[3]), (tmp_polygon[2], tmp_polygon[1]))
                 end += search.end()
 
                 end += re.search(r'END\s(\w|\_)+\n', lef_data[end:]).end()
@@ -161,16 +164,22 @@ class LefParser:
 
                 lefports.append(LefPort(name,direction,use,layer,polygon))
 
-                if (end == endmacro):
-                    break
+            lefcells.append(LefCell(cellname, cellsize, lefports))
 
-        lefcells.append(LefCell(cellname, lefports))
+        return lefcells
+
+
 
 
 
 
 
 if __name__ == "__main__":
-    lefparser = LefParser("lef_files/1_cells_4_pins.lef")
+    lefparser = LefParser("1_cells_4_pins.lef")
 
-    lefparser.get_cells()
+    lefcells = lefparser.get_cells()
+
+    for cells in lefcells:
+        print(cells.get_name(), cells.get_size())
+        for port in cells.get_ports():
+            print(port.get_name(), port.get_direction(), port.get_layer(), port.get_polygon(), port.get_use())
